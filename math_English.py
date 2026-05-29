@@ -325,19 +325,70 @@ elif menu_choice == "5. Advanced Formulas Menu":
 # ==========================================
 # 6. MULTI-FUNCTIONAL DATA CHARTS
 # ==========================================
+# ==========================================
+# 6. MULTI-FUNCTIONAL DATA CHARTS
+# ==========================================
 elif menu_choice == "6. Multi-functional Data Charts":
     st.subheader("📚 System Internal Reference Charts")
-    ref_table = st.selectbox("Select Reference Table Unit:", ["Multiplication Table", "Prime Numbers Chart (Under 1000)", "Squares Table (Under 1000)", "Cubes Table (Under 1000)", "Common Pythagorean Triples"])
+    ref_table = st.selectbox("Select Reference Table Unit:", [
+        "Multiplication Table", 
+        "Prime Numbers Chart (Under 1000)", 
+        "Squares Table (Under 1000)", 
+        "Cubes Table (Under 1000)", 
+        "Common Pythagorean Triples"
+    ])
+    
+    # CSS injection to force text wrap inside code blocks so they don't overflow the screen
+    st.markdown("""
+        <style>
+        code {
+            white-space: pre-wrap !important; /* Forces text to wrap to the next line */
+            word-break: break-all !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     if ref_table == "Multiplication Table":
-        st.code("1x1=1\n1x2=2 2x2=4\n1x3=3 2x3=6 3x3=9\n1x4=4 2x4=8 3x4=12 4x4=16\n1x5=5 2x5=10 3x5=15 4x5=20 5x5=25\n1x6=6 2x6=12 3x6=18 4x6=24 5x6=30 6x6=36\n1x7=7 2x7=14 3x7=21 4x7=28 5x7=35 6x7=42 7x7=49\n1x8=8 2x8=16 3x8=24 4x8=32 5x8=40 6x8=48 7x8=56 8x8=64\n1x9=9 2x9=18 3x9=27 4x9=36 5x9=45 6x9=54 7x9=63 8x9=72 9x9=81")
+        st.code(
+            "1x1=1\n"
+            "1x2=2   2x2=4\n"
+            "1x3=3   2x3=6   3x3=9\n"
+            "1x4=4   2x4=8   3x4=12  4x4=16\n"
+            "1x5=5   2x5=10  3x5=15  4x5=20  5x5=25\n"
+            "1x6=6   2x6=12  3x6=18  4x6=24  5x6=30  6x6=36\n"
+            "1x7=7   2x7=14  3x7=21  4x7=28  5x7=35  6x7=42  7x7=49\n"
+            "1x8=8   2x8=16  3x8=24  4x8=32  5x8=40  6x8=48  7x8=56  8x8=64\n"
+            "1x9=9   2x9=18  3x9=27  4x9=36  5x9=45  6x9=54  7x9=63  8x9=72  9x9=81"
+        )
+        
     elif ref_table == "Prime Numbers Chart (Under 1000)":
-        st.code("2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71...\n[Compressed for web display, full database loaded in background]")
+        st.write("--- Core Database: 168 Primes Under 1000 ---")
+        primes_data = (
+            "2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, "
+            "73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, "
+            "179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, "
+            "283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, "
+            "419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, "
+            "557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, "
+            "673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, "
+            "821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, "
+            "953, 967, 971, 977, 983, 991, 997"
+        )
+        st.code(primes_data)
+        
     elif ref_table == "Squares Table (Under 1000)":
-        st.code("1^2=1, 2^2=4, 3^2=9 ... 31^2=961")
+        st.write("--- Perfect Squares Core (1² to 31²) ---")
+        squares_data = ", ".join([f"{i}²={i**2}" for i in range(1, 32)])
+        st.code(squares_data)
+        
     elif ref_table == "Cubes Table (Under 1000)":
-        st.code("1³=1, 2³=8, 3³=27 ... 10³=1000")
+        st.write("--- Perfect Cubes Core (1³ to 10³) ---")
+        cubes_data = ", ".join([f"{i}³={i**3}" for i in range(1, 11)])
+        st.code(cubes_data)
+        
     elif ref_table == "Common Pythagorean Triples":
-        st.code("3-4-5, 5-12-13, 8-15-17, 7-24-25, 9-40-41")
+        st.write("--- Core Database: Essential Pythagorean Triples (a-b-c) ---")
+        st.code("3-4-5,  5-12-13,  8-15-17,  7-24-25,  9-40-41,  11-60-61,  12-35-37,  20-21-29")
 
 # ==========================================
 # 7. PERIMETER FORMULAS MODULE
