@@ -107,15 +107,29 @@ if not st.session_state.authenticated:
                 st.error("❌ INVALID CREDENTIALS. ACCESS DENIED.")
                 
     elif auth_mode == "2. REGISTER (新冒险者注册)":
+        st.markdown("### 🛡️ ARCHITECT AUTHORIZATION REQUIRED")
+        st.write("欲創建新矩陣帳號，請聯繫管理員 Harry 輸入驗證密鑰。")
+        
+        # 第一關：管理員實體驗證（只有你懂得密碼，加上 type="password" 隱藏）
+        admin_key = st.text_input("ENTER ARCHITECT KEY (管理員授權密碼):", type="password", key="admin_k")
+        
+        st.markdown("---")
+        st.write(">>> 授權通過後方可填寫下方新帳號資訊：")
+        
+        # 第二關：原本的註冊輸入框
         reg_user = st.text_input("CREATE NEW USERNAME (输入新账号):", key="reg_u").strip()
         reg_pwd = st.text_input("CREATE NEW PASSWORD (输入新密码):", type="password", key="reg_p")
         
         if st.button("COMMIT REGISTRATION TO DATABASE"):
-            if not reg_user:
+            # 💡 核心防禦：先檢查管理員密碼對不對（這裡假設你設定的終極密碼是 "MatrixAdmin99"）
+            if admin_key != "MatrixAdmin99":
+                st.error("❌ 授權失敗：管理員密鑰錯誤！拒絕創建帳號。")
+            elif not reg_user:
                 st.error("❌ USERNAME CANNOT BE EMPTY.")
             elif reg_user in users:
                 st.error("❌ ARCHITECT NODE ALREADY EXISTS. CHOOSE ANOTHER NAME.")
             else:
+                # 兩關都過了，才允許寫入 JSON 檔案
                 users[reg_user] = reg_pwd
                 save_users(users)
                 st.success(f"🎉 ARCHITECT ACCOUNT [{reg_user}] SUCCESSFULLY LOGGED TO MATRIX DATABASE.")
