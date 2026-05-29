@@ -122,7 +122,8 @@ if not st.session_state.authenticated:
         
         if st.button("COMMIT REGISTRATION TO DATABASE"):
             # 💡 核心防禦：先檢查管理員密碼對不對（這裡假設你設定的終極密碼是 "MatrixAdmin99"）
-            if admin_key != "Idontknow1！":
+            # 💡 這樣寫不論你輸入中文還是英文的驚嘆號，通通都能順利過關！
+            if admin_key not in ["Idontknow1!", "Idontknow1！"]:
                 st.error("❌ 授權失敗：管理員密鑰錯誤！拒絕創建帳號。")
             elif not reg_user:
                 st.error("❌ USERNAME CANNOT BE EMPTY.")
