@@ -401,7 +401,7 @@ elif menu_choice == "9. [Hexadecimal ASCII Decryption]":
     if st.button("🟢 Execute Decryption Crack"):
         if user_input:
             try:
-                clean_output = "".join([chr(int(i, 16) - 3) musicians for i in user_input.split()])
+                clean_output = "".join([chr(int(i, 16) - 3) for i in user_input.split()])
                 st.success("🎉 Matrix decryption successful! Restored plaintext raw data:")
                 st.code(clean_output)
             except Exception: st.error("❌ Matrix Error! Please verify that the ciphertext stream is valid hex.")
