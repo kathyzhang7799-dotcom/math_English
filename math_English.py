@@ -1,6 +1,11 @@
 import streamlit as st
 from fractions import Fraction
 import math
+import os
+import json
+import time  # ✅ 修正：補上缺失的 time 模組，避免登入時崩潰
+
+DB_FILE = "users_db.json"
 
 # --- 1. 網頁全域配置與黑客帝國數位雨特效注入 ---
 st.set_page_config(page_title="THE MATRIX: CORE V8", page_icon="⚡", layout="wide")
@@ -44,249 +49,319 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ THE MATRIX: LOGIC SOURCE CORE V8")
-st.write("Welcome to the Ultimate Math Engine Web Interface.")
+# --- 2. 持久化账户读写函数（明文存储） ---
+def load_users() -> dict:
+    if not os.path.exists(DB_FILE):
+        return {}
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_users(users_data: dict):
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(users_data, f, ensure_ascii=False, indent=4)
 
 # 二次方程分數轉換輔助函數
 def to_fraction_str(val):
-    if val.is_integer():
+    if isinstance(val, float) and val.is_integer():
         return str(int(val))
-    frac = Fraction(val).limit_denominator(1000)
-    if abs(float(frac) - val) > 1e-9:
+    try:
+        frac = Fraction(val).limit_denominator(1000)
+        if abs(float(frac) - float(val)) > 1e-9:
+            return f"{val:.4f}"
+        return str(frac)
+    except:
         return f"{val:.4f}"
-    return str(frac)
 
-# --- 2. 側邊欄系統主選單對接 ---
-menu = st.sidebar.selectbox("請選擇模組功能 (SYSTEM MENU):", [
-    "1. Addition Mode",
-    "2. Subtraction Mode",
-    "3. Multiplication Mode",
-    "4. Division Mode",
-    "5. Advanced Formulas Selection",
-    "6. Multi-functional Data Charts",
-    "7. Perimeter Formulas Module",
-    "8. Hexadecimal ASCII Cipher Encryption",
-    "9. Hexadecimal ASCII Cipher Decryption"
-])
+# --- 3. 初始化 Streamlit 会话状态机 ---
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "current_user" not in st.session_state:
+    st.session_state.current_user = ""
 
-# --- 3. 模組核心逻辑完全實現 ---
+# --- 4. 核心鉴权层（GATEWAY AUTHENTICATION） ---
+if not st.session_state.authenticated:
+    st.title("⚡ THE MATRIX: GATEWAY SECURITY")
+    st.write("ACCESS DENIED. IDENTITY VERIFICATION REQUIRED TO BOOT CORE V8.")
+    
+    users = load_users()
+    
+    auth_mode = st.radio("SELECT GATEWAY COMMAND:", ["1. LOGIN (账户登录)", "2. REGISTER (新冒险者注册)"])
+    
+    st.markdown("---")
+    
+    if auth_mode == "1. LOGIN (账户登录)":
+        login_user = st.text_input("ENTER USERNAME (账号):", key="login_u")
+        login_pwd = st.text_input("ENTER PASSWORD (密码):", type="password", key="login_p") # ✅ 優化：加上 type="password" 隱藏密碼
+        
+        if st.button("EXECUTE LOGIN PROTOCOL"):
+            if login_user in users and users[login_user] == login_pwd:
+                st.session_state.authenticated = True
+                st.session_state.current_user = login_user
+                st.success(f"🔓 ACCESS GRANTED. WELCOME BACK, OPERATOR: {login_user}")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ INVALID CREDENTIALS. ACCESS DENIED.")
+                
+    elif auth_mode == "2. REGISTER (新冒险者注册)":
+        reg_user = st.text_input("CREATE NEW USERNAME (输入新账号):", key="reg_u").strip()
+        reg_pwd = st.text_input("CREATE NEW PASSWORD (输入新密码):", type="password", key="reg_p")
+        
+        if st.button("COMMIT REGISTRATION TO DATABASE"):
+            if not reg_user:
+                st.error("❌ USERNAME CANNOT BE EMPTY.")
+            elif reg_user in users:
+                st.error("❌ ARCHITECT NODE ALREADY EXISTS. CHOOSE ANOTHER NAME.")
+            else:
+                users[reg_user] = reg_pwd
+                save_users(users)
+                st.success(f"🎉 ARCHITECT ACCOUNT [{reg_user}] SUCCESSFULLY LOGGED TO MATRIX DATABASE.")
+                st.info(">>> Switching to Login tab to enter.")
 
-if menu == "1. Addition Mode":
-    st.subheader("➕ [Addition Mode]")
-    raw_one = st.text_input("Enter 1st addend:")
-    raw_two = st.text_input("Enter 2nd addend:")
-    if st.button("EXECUTE ADDITION"):
-        if raw_one and raw_two:
-            try:
-                one = Fraction(raw_one)
-                two = Fraction(raw_two)
-                st.success(f"Result: {one} + {two} = {one + two}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers or fractions!")
+else:
+    # --- 5. 鉴权通过：释放主程序系统 ---
+    st.sidebar.markdown(f"**🟢 OPERATOR:** `{st.session_state.current_user}`")
+    if st.sidebar.button("🚪 LOGOUT / LOCKDOWN"):
+        st.session_state.authenticated = False
+        st.session_state.current_user = ""
+        st.rerun()
 
-elif menu == "2. Subtraction Mode":
-    st.subheader("➖ [Subtraction Mode]")
-    raw_one = st.text_input("Enter minuend:")
-    raw_two = st.text_input("Enter subtrahend:")
-    if st.button("EXECUTE SUBTRACTION"):
-        if raw_one and raw_two:
-            try:
-                one = Fraction(raw_one)
-                two = Fraction(raw_two)
-                st.success(f"Result: {one} - {two} = {one - two}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers or fractions!")
+    st.title("⚡ THE MATRIX: LOGIC SOURCE CORE V8")
+    st.write(f"Welcome back to the Ultimate Math Engine Web Interface, {st.session_state.current_user}.")
 
-elif menu == "3. Multiplication Mode":
-    st.subheader("✖️ [Multiplication Mode]")
-    raw_one = st.text_input("Enter 1st factor:")
-    raw_two = st.text_input("Enter 2nd factor:")
-    if st.button("EXECUTE MULTIPLICATION"):
-        if raw_one and raw_two:
-            try:
-                one = Fraction(raw_one)
-                two = Fraction(raw_two)
-                st.success(f"Result: {one} × {two} = {one * two}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers or fractions!")
+    # --- 侧边栏系统主选单对接 ---
+    menu = st.sidebar.selectbox("請選擇模組功能 (SYSTEM MENU):", [
+        "1. Addition Mode",
+        "2. Subtraction Mode",
+        "3. Multiplication Mode",
+        "4. Division Mode",
+        "5. Advanced Formulas Selection",
+        "6. Multi-functional Data Charts",
+        "7. Perimeter Formulas Module",
+        "8. Hexadecimal ASCII Cipher Encryption",
+        "9. Hexadecimal ASCII Cipher Decryption"
+    ])
 
-elif menu == "4. Division Mode":
-    st.subheader("➗ [Division Mode]")
-    raw_one = st.text_input("Enter dividend:")
-    raw_two = st.text_input("Enter divisor:")
-    if st.button("EXECUTE DIVISION"):
-        if raw_one and raw_two:
-            try:
-                if raw_two == "0":
-                    st.warning("⚠️ Error: Divisor cannot be zero!")
-                else:
+    # --- 模組核心逻辑完全實現 ---
+    if menu == "1. Addition Mode":
+        st.subheader("➕ [Addition Mode]")
+        raw_one = st.text_input("Enter 1st addend:")
+        raw_two = st.text_input("Enter 2nd addend:")
+        if st.button("EXECUTE ADDITION"):
+            if raw_one and raw_two:
+                try:
                     one = Fraction(raw_one)
                     two = Fraction(raw_two)
-                    st.success(f"Result: {one} ÷ {two} = {one / two}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers or fractions!")
+                    st.success(f"Result: {one} + {two} = {one + two}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers or fractions!")
 
-elif menu == "5. Advanced Formulas Selection":
-    st.subheader("🧠 [Advanced Formulas Menu]")
-    adv_choice = st.selectbox("Select an advanced formula:", [
-        "1. Quadratic Equation Root Solver",
-        "2. Perfect Square Expansion",
-        "3. Pythagorean Theorem Unknown Side",
-        "4. Area Formulas Core",
-        "5. Volume Formulas Core"
-    ])
-    
-    if adv_choice == "1. Quadratic Equation Root Solver":
-        st.markdown("#### Quadratic Equation Solver (ax² + bx + c = 0)")
-        raw_a = st.text_input("Enter a:")
-        raw_b = st.text_input("Enter b:")
-        raw_c = st.text_input("Enter c:")
-        if st.button("SOLVE QUADRATIC"):
-            try:
-                input_one = float(raw_a)
-                input_two = float(raw_b)
-                input_three = float(raw_c)
-                if input_one == 0:
-                    st.error("❌ Error: 'a' cannot be 0 in a quadratic equation.")
-                else:
-                    discriminant = input_two ** 2 - 4 * input_one * input_three
-                    if discriminant < 0:
-                        st.error("❌ This equation has no real roots.")
+    elif menu == "2. Subtraction Mode":
+        st.subheader("➖ [Subtraction Mode]")
+        raw_one = st.text_input("Enter minuend:")
+        raw_two = st.text_input("Enter subtrahend:")
+        if st.button("EXECUTE SUBTRACTION"):
+            if raw_one and raw_two:
+                try:
+                    one = Fraction(raw_one)
+                    two = Fraction(raw_two)
+                    st.success(f"Result: {one} - {two} = {one - two}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers or fractions!")
+
+    elif menu == "3. Multiplication Mode":
+        st.subheader("✖️ [Multiplication Mode]")
+        raw_one = st.text_input("Enter 1st factor:")
+        raw_two = st.text_input("Enter 2nd factor:")
+        if st.button("EXECUTE MULTIPLICATION"):
+            if raw_one and raw_two:
+                try:
+                    one = Fraction(raw_one)
+                    two = Fraction(raw_two)
+                    st.success(f"Result: {one} × {two} = {one * two}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers or fractions!")
+
+    elif menu == "4. Division Mode":
+        st.subheader("➗ [Division Mode]")
+        raw_one = st.text_input("Enter dividend:")
+        raw_two = st.text_input("Enter divisor:")
+        if st.button("EXECUTE DIVISION"):
+            if raw_one and raw_two:
+                try:
+                    if raw_two == "0":
+                        st.warning("⚠️ Error: Divisor cannot be zero!")
                     else:
-                        anser_one = (-input_two + (discriminant ** 0.5)) / (2 * input_one)
-                        anser_two = (-input_two - (discriminant ** 0.5)) / (2 * input_one)
-                        st.success(f"🎉 Roots: {to_fraction_str(anser_one)} OR {to_fraction_str(anser_two)}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers. Try again!")
-
-    elif adv_choice == "2. Perfect Square Expansion":
-        st.markdown("#### Perfect Square Expansion (a²+2ab+b²)")
-        raw_a = st.text_input("Enter expression 'a':")
-        raw_b = st.text_input("Enter expression 'b':")
-        if st.button("EXPAND EXPRESSION"):
-            try:
-                user_input_for_wan_quan_ping_fang_one = Fraction(raw_a)
-                user_input_for_wan_quan_ping_fang_two = Fraction(raw_b)
-                ansers_for_wan_quan_ping_fang = user_input_for_wan_quan_ping_fang_one ** 2 + 2 * user_input_for_wan_quan_ping_fang_one * user_input_for_wan_quan_ping_fang_two + user_input_for_wan_quan_ping_fang_two ** 2
-                st.success(f"🎉 Expanded Result: {str(ansers_for_wan_quan_ping_fang)}")
-            except ValueError:
-                st.error("❌ Error: Please enter integers or decimals.")
-
-    elif adv_choice == "3. Pythagorean Theorem Unknown Side":
-        st.markdown("#### Pythagorean Theorem Solver")
-        py_mode = st.radio("What do you want to solve for?", ["Hypotenuse (求斜邊)", "Leg Side (求直角邊)"])
-        if py_mode == "Hypotenuse (求斜邊)":
-            raw_a = st.text_input("Enter leg length A:")
-            raw_b = st.text_input("Enter leg length B:")
-            if st.button("CALCULATE HYPOTENUSE"):
-                try:
-                    a = Fraction(raw_a)
-                    b = Fraction(raw_b)
-                    ans = (a ** 2 + b ** 2) ** 0.5
-                    st.success(f"🎉 Hypotenuse length: {ans}")
+                        one = Fraction(raw_one)
+                        two = Fraction(raw_two)
+                        st.success(f"Result: {one} ÷ {two} = {one / two}")
                 except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
-        else:
-            raw_a = st.text_input("Enter known leg length:")
-            raw_c = st.text_input("Enter hypotenuse length:")
-            if st.button("CALCULATE LEG SIDE"):
+                    st.error("❌ Error: Please enter valid numbers or fractions!")
+
+    elif menu == "5. Advanced Formulas Selection":
+        st.subheader("🧠 [Advanced Formulas Menu]")
+        adv_choice = st.selectbox("Select an advanced formula:", [
+            "1. Quadratic Equation Root Solver",
+            "2. Perfect Square Expansion",
+            "3. Pythagorean Theorem Unknown Side",
+            "4. Area Formulas Core",
+            "5. Volume Formulas Core"
+        ])
+        
+        if adv_choice == "1. Quadratic Equation Root Solver":
+            st.markdown("#### Quadratic Equation Solver (ax² + bx + c = 0)")
+            raw_a = st.text_input("Enter a:")
+            raw_b = st.text_input("Enter b:")
+            raw_c = st.text_input("Enter c:")
+            if st.button("SOLVE QUADRATIC"):
                 try:
-                    a = Fraction(raw_a)
-                    c = Fraction(raw_c)
-                    if a >= c:
-                        st.warning("⚠️ Error: The leg cannot be greater than or equal to the hypotenuse!")
+                    input_one = float(raw_a)
+                    input_two = float(raw_b)
+                    input_three = float(raw_c)
+                    if input_one == 0:
+                        st.error("❌ Error: 'a' cannot be 0 in a quadratic equation.")
                     else:
-                        ans = (c ** 2 - a ** 2) ** 0.5
-                        st.success(f"🎉 The other leg length: {ans}")
+                        discriminant = input_two ** 2 - 4 * input_one * input_three
+                        if discriminant < 0:
+                            st.error("❌ This equation has no real roots.")
+                        else:
+                            anser_one = (-input_two + (discriminant ** 0.5)) / (2 * input_one)
+                            anser_two = (-input_two - (discriminant ** 0.5)) / (2 * input_one)
+                            st.success(f"🎉 Roots: {to_fraction_str(anser_one)} OR {to_fraction_str(anser_two)}")
                 except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
+                    st.error("❌ Error: Please enter valid numbers. Try again!")
 
-    elif adv_choice == "4. Area Formulas Core":
-        st.markdown("#### [Area Calculation Mode]")
-        shape = st.selectbox("Please select a shape:", ["1. Rectangle / Square Area", "2. Triangle Area", "3. Circle Area"])
-        if shape == "1. Rectangle / Square Area":
-            c = st.text_input("Enter length:")
-            d = st.text_input("Enter width:")
-            if st.button("CALCULATE AREA"):
+        elif adv_choice == "2. Perfect Square Expansion":
+            st.markdown("#### Perfect Square Expansion (a²+2ab+b²)")
+            raw_a = st.text_input("Enter expression 'a':")
+            raw_b = st.text_input("Enter expression 'b':")
+            if st.button("EXPAND EXPRESSION"):
                 try:
-                    c_frac = Fraction(c)
-                    d_frac = Fraction(d)
-                    if d_frac == c_frac:
-                        st.success(f"🎉 The area of the square is: {c_frac * d_frac}")
-                    else:
-                        st.success(f"🎉 The area of the rectangle is: {c_frac * d_frac}")
+                    user_input_for_wan_quan_ping_fang_one = Fraction(raw_a)
+                    user_input_for_wan_quan_ping_fang_two = Fraction(raw_b)
+                    ansers_for_wan_quan_ping_fang = user_input_for_wan_quan_ping_fang_one ** 2 + 2 * user_input_for_wan_quan_ping_fang_one * user_input_for_wan_quan_ping_fang_two + user_input_for_wan_quan_ping_fang_two ** 2
+                    st.success(f"🎉 Expanded Result: {str(ansers_for_wan_quan_ping_fang)}")
                 except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
-        elif shape == "2. Triangle Area":
-            st.markdown("##### [Triangle Area Mode]")
-            anser = st.text_input("Enter base length:")
-            anser_ = st.text_input("Enter height:")
-            if st.button("CALCULATE TRIANGLE AREA"):
-                try:
-                    base = Fraction(anser)
-                    height = Fraction(anser_)
-                    st.success(f"🎉 The area of the triangle is: {Fraction(1, 2) * base * height}")
-                except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
-        elif shape == "3. Circle Area":
-            st.markdown("##### [Circle Area Mode]")
-            user_input_yu = st.text_input("Enter radius:")
-            if st.button("CALCULATE CIRCLE AREA"):
-                try:
-                    user_input_yu = Fraction(user_input_yu)
-                    st.success(f"🎉 The area of the circle is approx: {user_input_yu ** 2 * 3.1415926}")
-                except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
+                    st.error("❌ Error: Please enter integers or decimals.")
 
-    elif adv_choice == "5. Volume Formulas Core":
-        st.markdown("#### [Volume Calculation Mode]")
-        v_shape = st.selectbox("Please select a formula:", ["1. Cube / Rectangular Prism Volume", "2. Cylinder Volume", "3. Cone Volume"])
-        if v_shape == "1. Cube / Rectangular Prism Volume":
-            l = st.text_input("Enter length:")
-            w = st.text_input("Enter width:")
-            h = st.text_input("Enter height:")
-            if st.button("CALCULATE PRISM VOLUME"):
-                try:
-                    l_f = Fraction(l)
-                    w_f = Fraction(w)
-                    h_f = Fraction(h)
-                    st.success(f"🎉 The volume of the prism is: {l_f * w_f * h_f}")
-                except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
-        elif v_shape == "2. Cylinder Volume":
-            r = st.text_input("Enter base radius:")
-            h = st.text_input("Enter height:")
-            if st.button("CALCULATE CYLINDER VOLUME"):
-                try:
-                    r_f = float(r)
-                    h_f = float(h)
-                    v = math.pi * (r_f ** 2) * h_f
-                    st.success(f"🎉 The volume of the cylinder is approx: {v:.6f}")
-                except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
-        elif v_shape == "3. Cone Volume":
-            r = st.text_input("Enter base radius:")
-            h = st.text_input("Enter height:")
-            if st.button("CALCULATE CONNE VOLUME"):
-                try:
-                    r_f = float(r)
-                    h_f = float(h)
-                    v = (1 / 3) * math.pi * (r_f ** 2) * h_f
-                    st.success(f"🎉 The volume of the cone is approx: {v:.6f}")
-                except ValueError:
-                    st.error("❌ Error: Please enter valid numbers.")
+        elif adv_choice == "3. Pythagorean Theorem Unknown Side":
+            st.markdown("#### Pythagorean Theorem Solver")
+            py_mode = st.radio("What do you want to solve for?", ["Hypotenuse (求斜邊)", "Leg Side (求直角邊)"])
+            if py_mode == "Hypotenuse (求斜邊)":
+                raw_a = st.text_input("Enter leg length A:")
+                raw_b = st.text_input("Enter leg length B:")
+                if st.button("CALCULATE HYPOTENUSE"):
+                    try:
+                        a = Fraction(raw_a)
+                        b = Fraction(raw_b)
+                        ans = (a ** 2 + b ** 2) ** 0.5
+                        st.success(f"🎉 Hypotenuse length: {to_fraction_str(ans)}") # ✅ 優化：用格式化函數美化輸出
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+            else:
+                raw_a = st.text_input("Enter known leg length:")
+                raw_c = st.text_input("Enter hypotenuse length:")
+                if st.button("CALCULATE LEG SIDE"):
+                    try:
+                        a = Fraction(raw_a)
+                        c = Fraction(raw_c)
+                        if a >= c:
+                            st.warning("⚠️ Error: The leg cannot be greater than or equal to the hypotenuse!")
+                        else:
+                            ans = (c ** 2 - a ** 2) ** 0.5
+                            st.success(f"🎉 The other leg length: {to_fraction_str(ans)}") # ✅ 優化：用格式化函數美化輸出
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
 
-elif menu == "6. Multi-functional Data Charts":
-    st.subheader("📚 [Data Reference Charts]")
-    chart_choice = st.selectbox("Select Database Chart:", [
-        "1. Multiplication Table",
-        "2. Prime Numbers Chart (under 1000)",
-        "3. Squares Table (under 1000)",
-        "4. Common Pythagorean Triples"
-    ])
-    
-    if chart_choice == "1. Multiplication Table":
-        st.code("""
+        elif adv_choice == "4. Area Formulas Core":
+            st.markdown("#### [Area Calculation Mode]")
+            shape = st.selectbox("Please select a shape:", ["1. Rectangle / Square Area", "2. Triangle Area", "3. Circle Area"])
+            if shape == "1. Rectangle / Square Area":
+                c = st.text_input("Enter length:")
+                d = st.text_input("Enter width:")
+                if st.button("CALCULATE AREA"):
+                    try:
+                        c_frac = Fraction(c)
+                        d_frac = Fraction(d)
+                        if d_frac == c_frac:
+                            st.success(f"🎉 The area of the square is: {c_frac * d_frac}")
+                        else:
+                            st.success(f"🎉 The area of the rectangle is: {c_frac * d_frac}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+            elif shape == "2. Triangle Area":
+                st.markdown("##### [Triangle Area Mode]")
+                anser = st.text_input("Enter base length:")
+                anser_ = st.text_input("Enter height:")
+                if st.button("CALCULATE TRIANGLE AREA"):
+                    try:
+                        base = Fraction(anser)
+                        height = Fraction(anser_)
+                        st.success(f"🎉 The area of the triangle is: {Fraction(1, 2) * base * height}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+            elif shape == "3. Circle Area":
+                st.markdown("##### [Circle Area Mode]")
+                user_input_yu = st.text_input("Enter radius:")
+                if st.button("CALCULATE CIRCLE AREA"):
+                    try:
+                        user_input_yu = Fraction(user_input_yu)
+                        st.success(f"🎉 The area of the circle is approx: {float(user_input_yu) ** 2 * 3.1415926:.4f}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+
+        elif adv_choice == "5. Volume Formulas Core":
+            st.markdown("#### [Volume Calculation Mode]")
+            v_shape = st.selectbox("Please select a formula:", ["1. Cube / Rectangular Prism Volume", "2. Cylinder Volume", "3. Cone Volume"])
+            if v_shape == "1. Cube / Rectangular Prism Volume":
+                l = st.text_input("Enter length:")
+                w = st.text_input("Enter width:")
+                h = st.text_input("Enter height:")
+                if st.button("CALCULATE PRISM VOLUME"):
+                    try:
+                        l_f = Fraction(l)
+                        w_f = Fraction(w)
+                        h_f = Fraction(h)
+                        st.success(f"🎉 The volume of the prism is: {l_f * w_f * h_f}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+            elif v_shape == "2. Cylinder Volume":
+                r = st.text_input("Enter base radius:")
+                h = st.text_input("Enter height:")
+                if st.button("CALCULATE CYLINDER VOLUME"):
+                    try:
+                        r_f = float(r)
+                        h_f = float(h)
+                        v = math.pi * (r_f ** 2) * h_f
+                        st.success(f"🎉 The volume of the cylinder is approx: {v:.6f}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+            elif v_shape == "3. Cone Volume":
+                r = st.text_input("Enter base radius:")
+                h = st.text_input("Enter height:")
+                if st.button("CALCULATE CONNE VOLUME"):
+                    try:
+                        r_f = float(r)
+                        h_f = float(h)
+                        v = (1 / 3) * math.pi * (r_f ** 2) * h_f
+                        st.success(f"🎉 The volume of the cone is approx: {v:.6f}")
+                    except ValueError:
+                        st.error("❌ Error: Please enter valid numbers.")
+
+    elif menu == "6. Multi-functional Data Charts":
+        st.subheader("📚 [Data Reference Charts]")
+        chart_choice = st.selectbox("Select Database Chart:", [
+            "1. Multiplication Table",
+            "2. Prime Numbers Chart (under 1000)",
+            "3. Squares Table (under 1000)",
+            "4. Common Pythagorean Triples"
+        ])
+        
+        if chart_choice == "1. Multiplication Table":
+            st.code("""
 1x1=1
 1x2=2 2x2=4
 1x3=3 2x3=6 3x3=9
@@ -298,8 +373,8 @@ elif menu == "6. Multi-functional Data Charts":
 1x9=9 2x9=18 3x9=27 4x9=36 5x9=45 6x9=54 7x9=63 8x9=72 9x9=81
 """, language="text")
 
-    elif chart_choice == "2. Prime Numbers Chart (under 1000)":
-        st.code("""
+        elif chart_choice == "2. Prime Numbers Chart (under 1000)":
+            st.code("""
 Prime Numbers up to 1000:
 2,    3,    5,    7,   11,   13,   17,   19,   23,   29, 
 31,   37,   41,   43,   47,   53,   59,   61,   67,   71, 
@@ -320,8 +395,8 @@ Prime Numbers up to 1000:
 941,  947,  953,  967,  971,  977,  983,  991,  997
 """, language="text")
 
-    elif chart_choice == "3. Squares Table (under 1000)":
-        st.code("""
+        elif chart_choice == "3. Squares Table (under 1000)":
+            st.code("""
 Square Numbers Chart:
 1^2 = 1          2^2 = 4          3^2 = 9          4^2 = 16   
 5^2 = 25         6^2 = 36         7^2 = 49         8^2 = 64   
@@ -332,14 +407,14 @@ Square Numbers Chart:
 25^2 = 625       26^2 = 676       27^2 = 729       28^2 = 784  
 29^2 = 841       30^2 = 900       31^2 = 961
 """, language="text")
-        
-        st.markdown("##### [SYSTEM DATABASE] UNLOCKED: PERFECT CUBE NUMBERS (1-1000)")
-        st.code("""
+            
+            st.markdown("##### [SYSTEM DATABASE] UNLOCKED: PERFECT CUBE NUMBERS (1-1000)")
+            st.code("""
 ┌────────────────────────────────────────────────────────────────────────┐
 │  ▶▶▶ [SYSTEM DATABASE] UNLOCKED: PERFECT CUBE NUMBERS (1-1000) ◀◀◀     │
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
-│       [CORE-A: 01-05]                  [CORE-B: 06-10]                 │
+│        [CORE-A: 01-05]                   [CORE-B: 06-10]               │
 │   ─────────────────────────        ─────────────────────────           │
 │    [001]  01³ = 1                   [006]  06³ = 216                   │
 │    [002]  02³ = 8                   [007]  07³ = 343                   │
@@ -352,8 +427,8 @@ Square Numbers Chart:
 └────────────────────────────────────────────────────────────────────────┘
 """, language="text")
 
-    elif chart_choice == "4. Common Pythagorean Triples":
-        st.code("""
+        elif chart_choice == "4. Common Pythagorean Triples":
+            st.code("""
    Legs    Hypotenuse
 3 — 4 — 5
 5 — 12 — 13
@@ -365,96 +440,96 @@ Square Numbers Chart:
 20 — 21 — 29
 """, language="text")
 
-elif menu == "7. Perimeter Formulas Module":
-    st.subheader("📏 [Perimeter Calculation Mode]")
-    p_shape = st.selectbox("Select Perimeter Sub-module:", [
-        "1. Rectangle Perimeter",
-        "2. Triangle Perimeter",
-        "3. Circle Circumference",
-        "4. General Quadrilateral Perimeter"
-    ])
-    
-    if p_shape == "1. Rectangle Perimeter":
-        c = st.text_input("Rectangle Mode - Enter width:")
-        d = st.text_input("Enter length:")
-        if st.button("CALCULATE RECTANGLE PERIMETER"):
-            try:
-                c = Fraction(c)
-                d = Fraction(d)
-                st.success(f"🎉 Rectangle perimeter is: {(c + d) * 2}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers.")
+    elif menu == "7. Perimeter Formulas Module":
+        st.subheader("📏 [Perimeter Calculation Mode]")
+        p_shape = st.selectbox("Select Perimeter Sub-module:", [
+            "1. Rectangle Perimeter",
+            "2. Triangle Perimeter",
+            "3. Circle Circumference",
+            "4. General Quadrilateral Perimeter"
+        ])
+        
+        if p_shape == "1. Rectangle Perimeter":
+            c = st.text_input("Rectangle Mode - Enter width:")
+            d = st.text_input("Enter length:")
+            if st.button("CALCULATE RECTANGLE PERIMETER"):
+                try:
+                    c = Fraction(c)
+                    d = Fraction(d)
+                    st.success(f"🎉 Rectangle perimeter is: {(c + d) * 2}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers.")
 
-    elif p_shape == "2. Triangle Perimeter":
-        st.markdown("##### [Triangle Perimeter Mode]")
-        d = st.text_input("Enter length of side 1:")
-        b_side = st.text_input("Enter length of side 2:")
-        c = st.text_input("Enter length of side 3:")
-        if st.button("CALCULATE TRIANGLE PERIMETER"):
-            try:
-                d = Fraction(d)
-                b_side = Fraction(b_side)
-                c = Fraction(c)
-                if d >= (b_side + c) or b_side >= (c + d) or c >= (d + b_side):
-                    st.error("❌ Error: These sides cannot form a valid triangle!")
-                else:
-                    st.success(f"🎉 The perimeter of the triangle is: {d + b_side + c}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers.")
+        elif p_shape == "2. Triangle Perimeter":
+            st.markdown("##### [Triangle Perimeter Mode]")
+            d = st.text_input("Enter length of side 1:")
+            b_side = st.text_input("Enter length of side 2:")
+            c = st.text_input("Enter length of side 3:")
+            if st.button("CALCULATE TRIANGLE PERIMETER"):
+                try:
+                    d = Fraction(d)
+                    b_side = Fraction(b_side)
+                    c = Fraction(c)
+                    if d >= (b_side + c) or b_side >= (c + d) or c >= (d + b_side):
+                        st.error("❌ Error: These sides cannot form a valid triangle!")
+                    else:
+                        st.success(f"🎉 The perimeter of the triangle is: {d + b_side + c}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers.")
 
-    elif p_shape == "3. Circle Circumference":
-        st.markdown("##### Select Precision:")
-        prec = st.radio("Precision standard:", ["1. Low Precision (π = 3)", "2. Normal Precision (π = 3.14)", "3. High Precision (π = 3.1415926)"])
-        pi_dict = {"1. Low Precision (π = 3)": 3.0, "2. Normal Precision (π = 3.14)": 3.14, "3. High Precision (π = 3.1415926)": 3.1415926}
-        pi_val = pi_dict[prec]
-        r = st.text_input(f"Enter radius (Current π = {pi_val}):")
-        if st.button("CALCULATE CIRCUMFERENCE"):
-            try:
-                r_val = float(r)
-                st.success(f"🎉 Circumference is: {2 * pi_val * r_val}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers.")
+        elif p_shape == "3. Circle Circumference":
+            st.markdown("##### Select Precision:")
+            prec = st.radio("Precision standard:", ["1. Low Precision (π = 3)", "2. Normal Precision (π = 3.14)", "3. High Precision (π = 3.1415926)"])
+            pi_dict = {"1. Low Precision (π = 3)": 3.0, "2. Normal Precision (π = 3.14)": 3.14, "3. High Precision (π = 3.1415926)": 3.1415926}
+            pi_val = pi_dict[prec]
+            r = st.text_input(f"Enter radius (Current π = {pi_val}):")
+            if st.button("CALCULATE CIRCUMFERENCE"):
+                try:
+                    r_val = float(r)
+                    st.success(f"🎉 Circumference is: {2 * pi_val * r_val}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers.")
 
-    elif p_shape == "4. General Quadrilateral Perimeter":
-        st.markdown("##### [Quadrilateral Perimeter Mode]")
-        ganjinwanshi = st.text_input("Enter side 1:")
-        ganjinwanshizaiyibian = st.text_input("Enter side 2:")
-        ganjinwanshidisanbian = st.text_input("Enter side 3:")
-        zhongyuyaowanshilema = st.text_input("Enter side 4:")
-        if st.button("CALCULATE QUADRILATERAL PERIMETER"):
-            try:
-                one = Fraction(ganjinwanshi)
-                two = Fraction(ganjinwanshizaiyibian)
-                three = Fraction(ganjinwanshidisanbian)
-                four = Fraction(zhongyuyaowanshilema)
-                st.success(f"🎉 Quadrilateral perimeter is: {one + two + three + four}")
-            except ValueError:
-                st.error("❌ Error: Please enter valid numbers.")
+        elif p_shape == "4. General Quadrilateral Perimeter":
+            st.markdown("##### [Quadrilateral Perimeter Mode]")
+            ganjinwanshi = st.text_input("Enter side 1:")
+            ganjinwanshizaiyibian = st.text_input("Enter side 2:")
+            ganjinwanshidisanbian = st.text_input("Enter side 3:")
+            zhongyuyaowanshilema = st.text_input("Enter side 4:")
+            if st.button("CALCULATE QUADRILATERAL PERIMETER"):
+                try:
+                    one = Fraction(ganjinwanshi)
+                    two = Fraction(ganjinwanshizaiyibian)
+                    three = Fraction(ganjinwanshidisanbian)
+                    four = Fraction(zhongyuyaowanshilema)
+                    st.success(f"🎉 Quadrilateral perimeter is: {one + two + three + four}")
+                except ValueError:
+                    st.error("❌ Error: Please enter valid numbers.")
 
-elif menu == "8. Hexadecimal ASCII Cipher Encryption":
-    st.subheader("🔒 [Hexadecimal ASCII Cipher Encryption]")
-    user_input = st.text_input("Enter plaintext to encrypt:")
-    if st.button("RUN ENCRYPTION MODULE"):
-        if user_input:
-            list_one = []
-            for i in user_input:
-                list_one.append(hex(ord(i) + 3)[2:])
-            clean_output = " ".join(list_one)
-            st.success(f"🔒 Ciphertext: {clean_output}")
-            st.code(clean_output, language="text")
-
-elif menu == "9. Hexadecimal ASCII Cipher Decryption":
-    st.subheader("🔓 [Hexadecimal ASCII Cipher Decryption]")
-    user_input = st.text_input("Enter ciphertext to decrypt:")
-    if st.button("RUN DECRYPTION MODULE"):
-        if user_input:
-            try:
-                new_list = user_input.split()
-                new_list_ = []
-                for i in new_list:
-                    new_list_.append(chr(int(i, 16) - 3))
-                clean_output = "".join(new_list_)
-                st.success(f"🔓 Decrypted Plaintext: {clean_output}")
+    elif menu == "8. Hexadecimal ASCII Cipher Encryption":
+        st.subheader("🔒 [Hexadecimal ASCII Cipher Encryption]")
+        user_input = st.text_input("Enter plaintext to encrypt:")
+        if st.button("RUN ENCRYPTION MODULE"):
+            if user_input:
+                list_one = []
+                for i in user_input:
+                    list_one.append(hex(ord(i) + 3)[2:])
+                clean_output = " ".join(list_one)
+                st.success(f"🔒 Ciphertext: {clean_output}")
                 st.code(clean_output, language="text")
-            except Exception:
-                st.error("❌ Error: Invalid hexadecimal ciphertext. Check your input!")
+
+    elif menu == "9. Hexadecimal ASCII Cipher Decryption":
+        st.subheader("🔓 [Hexadecimal ASCII Cipher Decryption]")
+        user_input = st.text_input("Enter ciphertext to decrypt:")
+        if st.button("RUN DECRYPTION MODULE"):
+            if user_input:
+                try:
+                    new_list = user_input.split()
+                    new_list_ = []
+                    for i in new_list:
+                        new_list_.append(chr(int(i, 16) - 3))
+                    clean_output = "".join(new_list_)
+                    st.success(f"🔓 Decrypted Plaintext: {clean_output}")
+                    st.code(clean_output, language="text")
+                except Exception:
+                    st.error("❌ Error: Invalid hexadecimal ciphertext. Check your input!")
