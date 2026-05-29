@@ -169,7 +169,8 @@ elif menu_choice == "1. Addition Mode":
             one = Fraction(raw_one)
             two = Fraction(raw_two)
             st.code(f"Result: {one} + {two} = {one + two}")
-        except ValueError: st.error("❌ Error: Please enter valid numbers or fractions!")
+        except ValueError: 
+            st.error("❌ Error: Please enter valid numbers or fractions!")
 
 # ==========================================
 # 2. SUBTRACTION MODE
@@ -183,7 +184,8 @@ elif menu_choice == "2. Subtraction Mode":
             one = Fraction(raw_one)
             two = Fraction(raw_two)
             st.code(f"Result: {one} - {two} = {one - two}")
-        except ValueError: st.error("❌ Error: Please enter valid numbers or fractions!")
+        except ValueError: 
+            st.error("❌ Error: Please enter valid numbers or fractions!")
 
 # ==========================================
 # 3. MULTIPLICATION MODE
@@ -197,7 +199,8 @@ elif menu_choice == "3. Multiplication Mode":
             one = Fraction(raw_one)
             two = Fraction(raw_two)
             st.code(f"Result: {one} × {two} = {one * two}")
-        except ValueError: st.error("❌ Error: Please enter valid numbers or fractions!")
+        except ValueError: 
+            st.error("❌ Error: Please enter valid numbers or fractions!")
 
 # ==========================================
 # 4. DIVISION MODE
@@ -207,13 +210,17 @@ elif menu_choice == "4. Division Mode":
     raw_one = st.text_input("Enter dividend:", key="div1")
     raw_two = st.text_input("Enter divisor:", key="div2")
     if st.button("Calculate Quotient"):
-        if raw_two == "0": st.warning("⚠️ Error: Divisor cannot be zero!")
+        if raw_two == "0": 
+            st.warning("⚠️ Error: Divisor cannot be zero!")
         else:
             try:
                 one = Fraction(raw_one)
                 two = Fraction(raw_two)
                 st.code(f"Result: {one} ÷ {two} = {one / two}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers or fractions!")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers or fractions!")
+            except ZeroDivisionError:
+                st.error("❌ Error: Divisor evaluates to zero!")
 
 # ==========================================
 # 5. ADVANCED FORMULAS MENU
@@ -236,15 +243,18 @@ elif menu_choice == "5. Advanced Formulas Menu":
         if st.button("Solve Equation"):
             try:
                 input_one, input_two, input_three = float(raw_a), float(raw_b), float(raw_c)
-                if input_one == 0: st.error("❌ Error: 'a' cannot be 0 in a quadratic equation.")
+                if input_one == 0: 
+                    st.error("❌ Error: 'a' cannot be 0 in a quadratic equation.")
                 else:
                     discriminant = input_two ** 2 - 4 * input_one * input_three
-                    if discriminant < 0: st.error("❌ Error: This equation has no real roots.")
+                    if discriminant < 0: 
+                        st.error("❌ Error: This equation has no real roots.")
                     else:
                         ans1 = (-input_two + (discriminant ** 0.5)) / (2 * input_one)
                         ans2 = (-input_two - (discriminant ** 0.5)) / (2 * input_one)
                         st.success(f"🎉 Roots: {ans1} OR {ans2}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers.")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers.")
 
     elif sub_menu == "Perfect Square Expansion":
         st.write("--- Perfect Square Expansion (a²+2ab+b²) ---")
@@ -254,7 +264,8 @@ elif menu_choice == "5. Advanced Formulas Menu":
             try:
                 ans = Fraction(raw_a)**2 + 2*Fraction(raw_a)*Fraction(raw_b) + Fraction(raw_b)**2
                 st.success(f"🎉 Expanded Result: {str(ans)}")
-            except ValueError: st.error("❌ Error: Please enter valid integers or decimals.")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid integers or decimals.")
 
     elif sub_menu == "Pythagorean Theorem Unknown Side":
         st.write("--- Pythagorean Theorem Solver ---")
@@ -263,17 +274,22 @@ elif menu_choice == "5. Advanced Formulas Menu":
             raw_a = st.text_input("Enter leg length A:")
             raw_b = st.text_input("Enter leg length B:")
             if st.button("Calculate Hypotenuse"):
-                try: st.success(f"🎉 Hypotenuse length: {(Fraction(raw_a)**2 + Fraction(raw_b)**2)**0.5}")
-                except ValueError: st.error("❌ Error: Invalid input parameters.")
+                try: 
+                    st.success(f"🎉 Hypotenuse length: {(Fraction(raw_a)**2 + Fraction(raw_b)**2)**0.5}")
+                except ValueError: 
+                    st.error("❌ Error: Invalid input parameters.")
         else:
             raw_a = st.text_input("Enter known leg length:")
             raw_c = st.text_input("Enter hypotenuse length:")
             if st.button("Calculate Missing Leg"):
                 try:
                     a_f, c_f = Fraction(raw_a), Fraction(raw_c)
-                    if a_f >= c_f: st.warning("⚠️ Error: The leg cannot be greater than or equal to the hypotenuse!")
-                    else: st.success(f"🎉 The other leg length: {(c_f**2 - a_f**2)**0.5}")
-                except ValueError: st.error("❌ Error: Invalid input parameters.")
+                    if a_f >= c_f: 
+                        st.warning("⚠️ Error: The leg cannot be greater than or equal to the hypotenuse!")
+                    else: 
+                        st.success(f"🎉 The other leg length: {(c_f**2 - a_f**2)**0.5}")
+                except ValueError: 
+                    st.error("❌ Error: Invalid input parameters.")
 
     elif sub_menu == "Area Formulas Core":
         st.write("--- [Area Calculation Mode] ---")
@@ -286,18 +302,23 @@ elif menu_choice == "5. Advanced Formulas Menu":
                     c_f, d_f = Fraction(c), Fraction(d)
                     name = "Square" if c_f == d_f else "Rectangle"
                     st.success(f"🎉 The area of the {name} is: {c_f * d_f}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
         elif shape == "Triangle Area":
             base = st.text_input("Enter base length:", key="area_tri1")
             height = st.text_input("Enter height:", key="area_tri2")
             if st.button("Calculate Triangle Area"):
-                try: st.success(f"🎉 The area of the triangle is: {Fraction(1, 2) * Fraction(base) * Fraction(height)}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                try: 
+                    st.success(f"🎉 The area of the triangle is: {Fraction(1, 2) * Fraction(base) * Fraction(height)}")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
         elif shape == "Circle Area":
             r = st.text_input("Enter radius:", key="area_circle")
             if st.button("Calculate Circle Area"):
-                try: st.success(f"🎉 The area of the circle is approx: {Fraction(r)**2 * 3.1415926}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                try: 
+                    st.success(f"🎉 The area of the circle is approx: {Fraction(r)**2 * 3.1415926}")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
 
     elif sub_menu == "Volume Formulas Core":
         st.write("--- [Volume Calculation Mode] ---")
@@ -307,24 +328,27 @@ elif menu_choice == "5. Advanced Formulas Menu":
             w = st.text_input("Enter width:", key="vol_cube2")
             h = st.text_input("Enter height:", key="vol_cube3")
             if st.button("Calculate Prism Volume"):
-                try: st.success(f"🎉 The volume of the prism is: {Fraction(l)*Fraction(w)*Fraction(h)}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                try: 
+                    st.success(f"🎉 The volume of the prism is: {Fraction(l)*Fraction(w)*Fraction(h)}")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
         elif v_shape == "Cylinder Volume":
             r = st.text_input("Enter base radius:", key="vol_cyl1")
             h = st.text_input("Enter height:", key="vol_cyl2")
             if st.button("Calculate Cylinder Volume"):
-                try: st.success(f"🎉 The volume of the cylinder is approx: {math.pi * (float(r)**2) * float(h):.6f}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                try: 
+                    st.success(f"🎉 The volume of the cylinder is approx: {math.pi * (float(r)**2) * float(h):.6f}")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
         elif v_shape == "Cone Volume":
             r = st.text_input("Enter base radius:", key="vol_cone1")
             h = st.text_input("Enter height:", key="vol_cone2")
             if st.button("Calculate Cone Volume"):
-                try: st.success(f"🎉 The volume of the cone is approx: {(1 / 3) * math.pi * (float(r)**2) * float(h):.6f}")
-                except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                try: 
+                    st.success(f"🎉 The volume of the cone is approx: {(1 / 3) * math.pi * (float(r)**2) * float(h):.6f}")
+                except ValueError: 
+                    st.error("❌ Error: Please enter valid numbers.")
 
-# ==========================================
-# 6. MULTI-FUNCTIONAL DATA CHARTS
-# ==========================================
 # ==========================================
 # 6. MULTI-FUNCTIONAL DATA CHARTS
 # ==========================================
@@ -401,8 +425,10 @@ elif menu_choice == "7. Perimeter Formulas Module":
         c = st.text_input("Enter width:", key="peri_rec1")
         d = st.text_input("Enter length:", key="peri_rec2")
         if st.button("Calculate Rectangle Perimeter"):
-            try: st.success(f"🎉 Rectangle perimeter is: {(Fraction(c)+Fraction(d))*2}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers.")
+            try: 
+                st.success(f"🎉 Rectangle perimeter is: {(Fraction(c)+Fraction(d))*2}")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers.")
     elif shape == "Triangle Perimeter":
         d = st.text_input("Enter length of side 1:", key="peri_tri1")
         b_side = st.text_input("Enter length of side 2:", key="peri_tri2")
@@ -410,9 +436,12 @@ elif menu_choice == "7. Perimeter Formulas Module":
         if st.button("Calculate Triangle Perimeter"):
             try:
                 d_f, b_f, c_f = Fraction(d), Fraction(b_side), Fraction(c)
-                if d_f >= (b_f+c_f) or b_f >= (c_f+d_f) or c_f >= (d_f+b_f): st.error("❌ Error: These sides cannot form a valid triangle!")
-                else: st.success(f"🎉 The perimeter of the triangle is: {d_f + b_f + c_f}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers.")
+                if d_f >= (b_f+c_f) or b_f >= (c_f+d_f) or c_f >= (d_f+b_f): 
+                    st.error("❌ Error: These sides cannot form a valid triangle!")
+                else: 
+                    st.success(f"🎉 The perimeter of the triangle is: {d_f + b_f + c_f}")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers.")
     elif shape == "Circle Circumference":
         pi_mode = st.radio("Select Precision Mode:", ["Low Precision (π = 3)", "Normal Precision (π = 3.14)", "High Precision (π = 3.1415926)"])
         r = st.text_input("Enter radius:", key="peri_cir")
@@ -420,15 +449,18 @@ elif menu_choice == "7. Perimeter Formulas Module":
             try:
                 pi_val = 3.0 if "Low" in pi_mode else (3.14 if "Normal" in pi_mode else 3.1415926)
                 st.success(f"🎉 Circumference is: {2 * pi_val * float(r)}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers.")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers.")
     elif shape == "General Quadrilateral Perimeter":
         g1 = st.text_input("Enter side 1:", key="p_quad1")
         g2 = st.text_input("Enter side 2:", key="p_quad2")
         g3 = st.text_input("Enter side 3:", key="p_quad3")
         g4 = st.text_input("Enter side 4:", key="p_quad4")
         if st.button("Calculate Quadrilateral Perimeter"):
-            try: st.success(f"🎉 Quadrilateral perimeter is: {Fraction(g1) + Fraction(g2) + Fraction(g3) + Fraction(g4)}")
-            except ValueError: st.error("❌ Error: Please enter valid numbers.")
+            try: 
+                st.success(f"🎉 Quadrilateral perimeter is: {Fraction(g1) + Fraction(g2) + Fraction(g3) + Fraction(g4)}")
+            except ValueError: 
+                st.error("❌ Error: Please enter valid numbers.")
 
 # ==========================================
 # 8. HEXADECIMAL ASCII ENCRYPTION
@@ -441,7 +473,8 @@ elif menu_choice == "8. [Hexadecimal ASCII Encryption]":
             clean_output = " ".join([hex(ord(i) + 3)[2:] for i in user_input])
             st.info("Encryption Complete. Generated Ciphertext Stream:")
             st.code(clean_output)
-        else: st.warning("Plaintext string cannot be empty.")
+        else: 
+            st.warning("Plaintext string cannot be empty.")
 
 # ==========================================
 # 9. HEXADECIMAL ASCII DECRYPTION
@@ -455,8 +488,10 @@ elif menu_choice == "9. [Hexadecimal ASCII Decryption]":
                 clean_output = "".join([chr(int(i, 16) - 3) for i in user_input.split()])
                 st.success("🎉 Matrix decryption successful! Restored plaintext raw data:")
                 st.code(clean_output)
-            except Exception: st.error("❌ Matrix Error! Please verify that the ciphertext stream is valid hex.")
-        else: st.warning("Ciphertext stream cannot be empty.")
+            except Exception: 
+                st.error("❌ Matrix Error! Please verify that the ciphertext stream is valid hex.")
+        else: 
+            st.warning("Ciphertext stream cannot be empty.")
 
 # ==========================================
 # 📜 FOOTER LOGO
