@@ -22,7 +22,7 @@ try:
     # 讀取 Streamlit Secrets 中的 API Key
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-pro')
 except Exception as e:
     st.error("SYSTEM_FAILURE: 密鑰讀取錯誤，請檢查 Streamlit Secrets 設定。")
     st.stop()
