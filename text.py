@@ -1,11 +1,11 @@
 import streamlit as st
 import time
-import google.generativeai as genai
+from groq import Groq  # 確保 requirements.txt 裡有 groq
 
-# 1. 頁面配置 (必須放在最頂端)
+# 1. 頁面配置
 st.set_page_config(page_title="MATRIX_FIXER", layout="wide")
 
-# 2. 駭客風格 CSS
+# 2. 駭客風格 CSS (保持不變)
 st.markdown("""
     <style>
     .stApp { background-color: #0d0d0d; color: #00FF41; font-family: 'Courier New', monospace; }
@@ -17,21 +17,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. 初始化 Gemini (修正後的安全配置)
+# 3. 初始化 Groq
 try:
-    # 讀取 Streamlit Secrets 中的 API Key
-    api_key = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # 讀取 Streamlit Secrets 中的 GROQ_API_KEY
+    api_key = st.secrets["GROQ_API_KEY"]
+    client = Groq(api_key=api_key)
 except Exception as e:
-    st.error("SYSTEM_FAILURE: 密鑰讀取錯誤，請檢查 Streamlit Secrets 設定。")
+    st.error("SYSTEM_FAILURE: 密鑰讀取錯誤，請確認 Secrets 設定為 GROQ_API_KEY。")
     st.stop()
 
-# 4. 核心糾錯功能
+# 4. 核心糾錯功能 (改用 Groq)
 def fix_text(wrong_text):
-    prompt = f"請修正以下英文，只回傳修正後的文字，不要解釋：{wrong_text}"
-    response = model.generate_content(prompt)
-    return response.text.strip()
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": f"請修正以下英文，只回傳修正後的文字，不要解釋：{wrong_text}"}],
+        model="llama3-70b-8192",
+    )
+    return chat_completion.choices[0].message.content.strip()
 
 # 5. UI 介面
 st.title("> SYSTEM: MATRIX_ENGLISH_FIXER")
@@ -49,7 +50,6 @@ if st.button("> EXECUTE_CORRECTION"):
                 result = fix_text(user_input)
                 st.subheader("> OUTPUT_STREAM:")
                 
-                # 打字機效果
                 placeholder = st.empty()
                 full_text = ""
                 for char in result:
@@ -57,7 +57,6 @@ if st.button("> EXECUTE_CORRECTION"):
                     placeholder.code(full_text + "▌")
                     time.sleep(0.02)
                 placeholder.code(result) 
-                
             except Exception as e:
                 st.error(f"RUNTIME_ERROR: {str(e)}")
 
