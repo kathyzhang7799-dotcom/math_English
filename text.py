@@ -29,7 +29,7 @@ except Exception as e:
 def fix_text(wrong_text):
     chat_completion = client.chat.completions.create(
         messages=[{"role": "user", "content": f"請修正以下英文，只回傳修正後的文字，不要解釋：{wrong_text}"}],
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
     )
     return chat_completion.choices[0].message.content.strip()
 
