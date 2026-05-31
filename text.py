@@ -1,11 +1,11 @@
 import streamlit as st
 import time
-from groq import Groq  # 確保 requirements.txt 裡有 groq
+from groq import Groq
 
 # 1. 頁面配置
 st.set_page_config(page_title="MATRIX_FIXER", layout="wide")
 
-# 2. 駭客風格 CSS (保持不變)
+# 2. 駭客風格 CSS
 st.markdown("""
     <style>
     .stApp { background-color: #0d0d0d; color: #00FF41; font-family: 'Courier New', monospace; }
@@ -17,16 +17,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. 初始化 Groq
+# 3. 初始化 Groq Client
 try:
-    # 讀取 Streamlit Secrets 中的 GROQ_API_KEY
-    api_key = st.secrets["GROQ_API_KEY"]
-    client = Groq(api_key=api_key)
+    # 這裡對應你在 Streamlit Secrets 設定的名稱
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except Exception as e:
-    st.error("SYSTEM_FAILURE: 密鑰讀取錯誤，請確認 Secrets 設定為 GROQ_API_KEY。")
+    st.error("SYSTEM_FAILURE: 無法讀取 API 金鑰，請檢查 Streamlit Secrets 是否設定正確。")
     st.stop()
 
-# 4. 核心糾錯功能 (改用 Groq)
+# 4. 核心糾錯功能
 def fix_text(wrong_text):
     chat_completion = client.chat.completions.create(
         messages=[{"role": "user", "content": f"請修正以下英文，只回傳修正後的文字，不要解釋：{wrong_text}"}],
@@ -50,6 +49,7 @@ if st.button("> EXECUTE_CORRECTION"):
                 result = fix_text(user_input)
                 st.subheader("> OUTPUT_STREAM:")
                 
+                # 打字機效果
                 placeholder = st.empty()
                 full_text = ""
                 for char in result:
