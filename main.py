@@ -3,7 +3,7 @@ import sqlite3
 import hashlib
 from groq import Groq
 
-# 1. 資料庫初始化 (只執行一次)
+# 1. Database Initialization
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -13,7 +13,7 @@ def init_db():
 
 init_db()
 
-# 2. 帳號功能函數
+# 2. Authentication Functions
 def register_user(username, password):
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -36,44 +36,78 @@ def login_user(username, password):
     conn.close()
     return user is not None
 
-# 3. 頁面邏輯
+# 3. UI Config
 st.set_page_config(page_title="MATRIX_CORE", layout="wide")
-ADMIN_KEY = "123456"  # 這裡改成你專屬的管理員密碼
+ADMIN_KEY = "123456" # Replace with your admin secret
 
+# Custom CSS (English UI focus)
+st.markdown("""
+    <style>
+    .stApp { background-color: #0d0d0d; color: #00FF41; font-family: 'Courier New', monospace; }
+    .stTextArea textarea { background-color: #1a1a1a !important; color: #00FF41 !important; border: 1px solid #00FF41 !important; }
+    div.stButton > button { background-color: #00FF41 !important; color: #000000 !important; font-weight: bold; border-radius: 0px; }
+    h1, h2, p { color: #00FF41 !important; }
+    .chat-msg { background: #1a1a1a; padding: 10px; border-left: 3px solid #00FF41; margin-bottom: 10px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 4. Auth Logic
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
     st.title("> SYSTEM_LOGIN_REQUIRED")
-    choice = st.radio("模式", ["登入", "創建帳號 (需管理員授權)"])
+    choice = st.radio("SELECT_MODE", ["LOGIN", "CREATE_ACCOUNT (ADMIN_AUTH_REQUIRED)"])
     
-    user = st.text_input("帳號")
-    pw = st.text_input("密碼", type="password")
+    user = st.text_input("USERNAME")
+    pw = st.text_input("PASSWORD", type="password")
     
-    if choice == "登入":
-        if st.button("確認登入"):
+    if choice == "LOGIN":
+        if st.button("> ACCESS_SYSTEM"):
             if login_user(user, pw):
                 st.session_state.logged_in = True
                 st.session_state.user = user
                 st.rerun()
             else:
-                st.error("帳號或密碼錯誤")
+                st.error("ACCESS_DENIED: INVALID_CREDENTIALS")
     else:
-        admin_code = st.text_input("管理員密碼", type="password")
-        if st.button("註冊"):
+        admin_code = st.text_input("ADMIN_AUTH_KEY", type="password")
+        if st.button("> REGISTER_USER"):
             if admin_code == ADMIN_KEY:
                 if register_user(user, pw):
-                    st.success("註冊成功，請登入！")
+                    st.success("SUCCESS: USER_CREATED")
                 else:
-                    st.error("帳號已存在")
+                    st.error("FAILURE: USER_ALREADY_EXISTS")
             else:
-                st.error("管理員密碼錯誤，拒絕訪問")
+                st.error("ACCESS_DENIED: UNAUTHORIZED_OPERATION")
+
+# 5. Secure Chat Logic (Post-Login)
 else:
-    st.write(f"歡迎回來, {st.session_state.user}")
-    if st.button("登出"):
+    st.title(f"> SYSTEM_CORE_ACTIVE: WELCOME {st.session_state.user}")
+    if st.button("LOGOUT"):
         st.session_state.logged_in = False
         st.rerun()
     
-    # 這裡放你原本的聊天機器人邏輯
-    st.title("> MATRIX_CHAT_ACTIVE")
-    # ... (你的聊天代碼)
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "system", "content": "You are a cold, efficient Matrix AI assistant."}]
+
+    for msg in st.session_state.messages:
+        if msg["role"] != "system":
+            role_label = "USER" if msg["role"] == "user" else "AI_CORE"
+            st.markdown(f"<div class='chat-msg'><strong>{role_label}:</strong> {msg['content']}</div>", unsafe_allow_html=True)
+
+    user_input = st.chat_input("TYPE_COMMAND...")
+
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        try:
+            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+            response = client.chat.completions.create(
+                messages=st.session_state.messages,
+                model="llama-3.3-70b-versatile",
+            )
+            ai_reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+            st.rerun()
+        except Exception as e:
+            st.error(f"RUNTIME_ERROR: {str(e)}")
