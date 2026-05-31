@@ -1,55 +1,79 @@
 import streamlit as st
+import sqlite3
+import hashlib
 from groq import Groq
 
-# 頁面配置
-st.set_page_config(page_title="MATRIX_CHAT", layout="wide")
+# 1. 資料庫初始化 (只執行一次)
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)')
+    conn.commit()
+    conn.close()
 
-# 駭客風格 CSS
-st.markdown("""
-    <style>
-    .stApp { background-color: #0d0d0d; color: #00FF41; font-family: 'Courier New', monospace; }
-    .stTextArea textarea { background-color: #1a1a1a !important; color: #00FF41 !important; border: 1px solid #00FF41 !important; }
-    div.stButton > button { background-color: #00FF41 !important; color: #000000 !important; font-weight: bold; border-radius: 0px; }
-    .chat-msg { background: #1a1a1a; padding: 10px; border-left: 3px solid #00FF41; margin-bottom: 10px; }
-    </style>
-""", unsafe_allow_html=True)
+init_db()
 
-# 初始化記憶
-if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "system", "content": "你是一個駭客風格的 AI，語氣簡潔、冷酷，像一個專業的系統核心。"}]
+# 2. 帳號功能函數
+def register_user(username, password):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+    try:
+        c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_pw))
+        conn.commit()
+        return True
+    except:
+        return False
+    finally:
+        conn.close()
 
-# 初始化客戶端
-try:
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-except:
-    st.error("SYSTEM_FAILURE: API_KEY_MISSING")
-    st.stop()
+def login_user(username, password):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+    c.execute('SELECT * FROM users WHERE username=? AND password=?', (username, hashed_pw))
+    user = c.fetchone()
+    conn.close()
+    return user is not None
 
-# 顯示聊天標題
-st.title("> SYSTEM_TERMINAL_V1.0")
-if st.button("CLEAR_MEMORY"):
-    st.session_state.messages = [{"role": "system", "content": "系統已重置。"}]
-    st.rerun()
+# 3. 頁面邏輯
+st.set_page_config(page_title="MATRIX_CORE", layout="wide")
+ADMIN_KEY = "123456"  # 這裡改成你專屬的管理員密碼
 
-# 顯示聊天記錄 (駭客式展示)
-for msg in st.session_state.messages:
-    if msg["role"] != "system":
-        role_label = "USER" if msg["role"] == "user" else "AI_CORE"
-        st.markdown(f"<div class='chat-msg'><strong>{role_label}:</strong> {msg['content']}</div>", unsafe_allow_html=True)
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 
-# 輸入區
-user_input = st.chat_input("輸入指令...")
-
-if user_input:
-    # 存入用戶輸入
-    st.session_state.messages.append({"role": "user", "content": user_input})
+if not st.session_state.logged_in:
+    st.title("> SYSTEM_LOGIN_REQUIRED")
+    choice = st.radio("模式", ["登入", "創建帳號 (需管理員授權)"])
     
-    # AI 回覆
-    with st.spinner("Processing..."):
-        response = client.chat.completions.create(
-            messages=st.session_state.messages,
-            model="llama-3.3-70b-versatile",
-        )
-        ai_reply = response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+    user = st.text_input("帳號")
+    pw = st.text_input("密碼", type="password")
+    
+    if choice == "登入":
+        if st.button("確認登入"):
+            if login_user(user, pw):
+                st.session_state.logged_in = True
+                st.session_state.user = user
+                st.rerun()
+            else:
+                st.error("帳號或密碼錯誤")
+    else:
+        admin_code = st.text_input("管理員密碼", type="password")
+        if st.button("註冊"):
+            if admin_code == ADMIN_KEY:
+                if register_user(user, pw):
+                    st.success("註冊成功，請登入！")
+                else:
+                    st.error("帳號已存在")
+            else:
+                st.error("管理員密碼錯誤，拒絕訪問")
+else:
+    st.write(f"歡迎回來, {st.session_state.user}")
+    if st.button("登出"):
+        st.session_state.logged_in = False
         st.rerun()
+    
+    # 這裡放你原本的聊天機器人邏輯
+    st.title("> MATRIX_CHAT_ACTIVE")
+    # ... (你的聊天代碼)
